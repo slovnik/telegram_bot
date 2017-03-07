@@ -11,7 +11,11 @@ import (
 )
 
 func main() {
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("SLOVNIK_BOT_ID"))
+
+	botID := os.Getenv("SLOVNIK_BOT_ID")
+	slovnikURL := os.Getenv("SLOVNIK_API_URL")
+
+	bot, err := tgbotapi.NewBotAPI(botID)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -32,9 +36,9 @@ func main() {
 
 		messageText := ""
 
-		lang := slovnik.DetectLanguage(update.Message.Text)
-
-		w, err := slovnik.GetTranslations(update.Message.Text, lang)
+		//lang := slovnik.DetectLanguage(update.Message.Text)
+		c, _ := slovnik.NewClient(slovnikURL)
+		w, err := c.Translate(update.Message.Text)
 
 		if err != nil || len(w.Word) <= 0 {
 			messageText = "Specified word not found :("
@@ -48,6 +52,5 @@ func main() {
 		msg.ReplyToMessageID = update.Message.MessageID
 
 		bot.Send(msg)
-
 	}
 }

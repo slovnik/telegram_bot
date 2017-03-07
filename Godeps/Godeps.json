@@ -1,24 +1,16 @@
 {
-	"ImportPath": "github.com/rpeshkov/slovnik_bot",
-	"GoVersion": "go1.7",
-	"GodepVersion": "v77",
+	"ImportPath": "github.com/slovnik/telegram_bot",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
 	"Deps": [
 		{
 			"ImportPath": "github.com/slovnik/slovnik",
-			"Rev": "16b5e4f20216d0f09572b3d346085953dd5dc4ae"
+			"Rev": "3c72770dd17bb27b59f3a41a9b982c5fdae21cf1"
 		},
 		{
 			"ImportPath": "github.com/technoweenie/multipartstreamer",
 			"Comment": "v1.0.1",
 			"Rev": "a90a01d73ae432e2611d178c18367fbaa13e0154"
-		},
-		{
-			"ImportPath": "golang.org/x/net/html",
-			"Rev": "f2499483f923065a842d38eb4c7f1927e6fc6e6d"
-		},
-		{
-			"ImportPath": "golang.org/x/net/html/atom",
-			"Rev": "f2499483f923065a842d38eb4c7f1927e6fc6e6d"
 		},
 		{
 			"ImportPath": "gopkg.in/telegram-bot-api.v4",
