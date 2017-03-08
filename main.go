@@ -7,6 +7,8 @@ import (
 
 	"github.com/slovnik/slovnik"
 
+	"net/http"
+
 	"gopkg.in/telegram-bot-api.v4"
 )
 
@@ -14,18 +16,25 @@ func main() {
 
 	botID := os.Getenv("SLOVNIK_BOT_ID")
 	slovnikURL := os.Getenv("SLOVNIK_API_URL")
+	webhookURL := os.Getenv("SLOVNIK_WEBHOOK_URL")
 
-	bot, err := tgbotapi.NewBotAPI(botID)
-	if err != nil {
+	var bot *tgbotapi.BotAPI
+	var err error
+
+	if bot, err = tgbotapi.NewBotAPI(botID); err != nil {
 		log.Panic(err)
 	}
 
 	bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-	updates, err := bot.GetUpdatesChan(u)
+	webHook := tgbotapi.NewWebhook(webhookURL + "/bot" + bot.Token)
+	if _, err = bot.SetWebhook(webHook); err != nil {
+		log.Panic(err)
+	}
+
+	updates := bot.ListenForWebhook("/bot" + bot.Token)
+	go http.ListenAndServe("0.0.0.0:8080", nil)
 
 	for update := range updates {
 		if update.Message == nil {
@@ -36,7 +45,6 @@ func main() {
 
 		messageText := ""
 
-		//lang := slovnik.DetectLanguage(update.Message.Text)
 		c, _ := slovnik.NewClient(slovnikURL)
 		w, err := c.Translate(update.Message.Text)
 
