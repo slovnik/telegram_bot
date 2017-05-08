@@ -5,7 +5,7 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/slovnik/slovnik",
-			"Rev": "cb8d50544cc8e595cb31e9ef60156c597aad05b0"
+			"Rev": "d0a74843d23b93162537f5cbd12533e79aa38691"
 		},
 		{
 			"ImportPath": "github.com/technoweenie/multipartstreamer",
