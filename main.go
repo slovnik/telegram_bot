@@ -1,11 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
 	"github.com/slovnik/slovnik"
+
+	"text/template"
+
+	"bytes"
 
 	"github.com/slovnik/telegram_bot/bot"
 	"github.com/slovnik/telegram_bot/config"
@@ -13,15 +16,35 @@ import (
 
 var cfg *config.Config
 
+var tmpl *template.Template
+
+var templateFiles = []string{
+	"./tmpl/full-word.gotmpl",
+	"./tmpl/short-word.gotmpl",
+	"./tmpl/translation.gotmpl",
+}
+
 func main() {
 
 	cfg = config.Setup()
+
+	funcs := template.FuncMap{
+		"join": strings.Join,
+	}
+
+	var err error
+
+	tmpl, err = template.New("").Funcs(funcs).ParseFiles(templateFiles...)
+
+	if err != nil {
+		log.Println(err)
+	}
 
 	bot.Create(cfg, handleIt)
 	bot.Listen()
 }
 
-func handleIt(message string) (response string) {
+func handleIt(message string) string {
 	c, err := slovnik.NewClient(cfg.SlovnikURL)
 	if err != nil {
 		log.Fatalln(err)
@@ -30,43 +53,12 @@ func handleIt(message string) (response string) {
 	words, err := c.Translate(message)
 
 	if err != nil {
-		response = "Указанное слово не найдено :("
-	} else {
-		if len(words) > 1 {
-			for _, w := range words {
-				response += fmt.Sprintln(shortTranslation(w))
-			}
-		} else if len(words) == 1 {
-			response = fullTranslation(words[0])
-		} else {
-			response = "Указанное слово не найдено :("
-		}
-
+		log.Println(err)
 	}
 
-	return
-}
+	var buf bytes.Buffer
 
-func fullTranslation(w slovnik.Word) string {
-	out := fmt.Sprintf("*%s* - %s\n\n", w.Word, strings.Join(w.Translations, ", "))
-	out += fmt.Sprintf("*%s*\n", w.WordType)
+	tmpl.ExecuteTemplate(&buf, "translation", words)
 
-	if len(w.Synonyms) > 0 {
-		out += fmt.Sprintln("\n*Synonyms:*")
-		out += fmt.Sprintln(strings.Join(w.Synonyms, ", "))
-	}
-	if len(w.Antonyms) > 0 {
-		out += fmt.Sprintln("\n*Antonyms:*")
-		out += fmt.Sprintln(strings.Join(w.Antonyms, ", "))
-	}
-
-	if len(w.DerivedWords) > 0 {
-		out += fmt.Sprintln("\n*Derived words:*")
-		out += fmt.Sprintln(strings.Join(w.DerivedWords, ", "))
-	}
-	return out
-}
-
-func shortTranslation(w slovnik.Word) string {
-	return fmt.Sprintf("*%s* - %s", w.Word, strings.Join(w.Translations, ", "))
+	return buf.String()
 }

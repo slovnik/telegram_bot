@@ -69,6 +69,10 @@ func Listen() {
 
 		msg.ParseMode = tgbotapi.ModeMarkdown
 
-		bot.Send(msg)
+		_, err := bot.Send(msg)
+
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }
