@@ -2,63 +2,37 @@ package main
 
 import (
 	"log"
-	"strings"
 
 	"github.com/slovnik/slovnik"
-
-	"text/template"
-
-	"bytes"
-
-	"github.com/slovnik/telegram_bot/bot"
-	"github.com/slovnik/telegram_bot/config"
 )
 
-var cfg *config.Config
-
-var tmpl *template.Template
-
-var templateFiles = []string{
-	"./tmpl/full-word.gotmpl",
-	"./tmpl/short-word.gotmpl",
-	"./tmpl/translation.gotmpl",
+type Env struct {
+	cfg      *Config
+	template *Template
 }
 
 func main() {
-
-	cfg = config.Setup()
-
-	funcs := template.FuncMap{
-		"join": strings.Join,
+	env := Env{
+		cfg:      Setup(),
+		template: CreateTemplate(),
 	}
 
-	var err error
-
-	tmpl, err = template.New("").Funcs(funcs).ParseFiles(templateFiles...)
-
-	if err != nil {
-		log.Println(err)
-	}
-
-	bot.Create(cfg, handleIt)
-	bot.Listen()
+	b := CreateBot(env.cfg, env.handleIt)
+	b.Listen()
 }
 
-func handleIt(message string) string {
-	c, err := slovnik.NewClient(cfg.SlovnikURL)
+func (e *Env) handleIt(message string) string {
+	c, err := slovnik.NewClient(e.cfg.SlovnikURL)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 
 	words, err := c.Translate(message)
 
 	if err != nil {
 		log.Println(err)
+		return e.template.Execute(nil)
 	}
 
-	var buf bytes.Buffer
-
-	tmpl.ExecuteTemplate(&buf, "translation", words)
-
-	return buf.String()
+	return e.template.Execute(words)
 }
