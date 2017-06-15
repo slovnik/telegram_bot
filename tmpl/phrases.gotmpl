@@ -1,0 +1,5 @@
+{{define "phrases"}}{{ $length := len . }}{{ if eq $length 1 }}{{ $word := index . 0}}
+{{- range $word.Samples }}{{ .Keyword }}: *{{ .Phrase }}* -> {{ .Translation }}
+{{end -}}
+{{end -}}
+{{end}}

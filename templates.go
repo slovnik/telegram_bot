@@ -17,6 +17,7 @@ func CreateTemplate() *Template {
 		"./tmpl/full-word.gotmpl",
 		"./tmpl/short-word.gotmpl",
 		"./tmpl/translation.gotmpl",
+		"./tmpl/phrases.gotmpl",
 	}
 
 	funcs := template.FuncMap{
@@ -34,8 +35,12 @@ func CreateTemplate() *Template {
 
 func (t *Template) Execute(words []slovnik.Word) string {
 	var buf bytes.Buffer
-
 	t.tmpl.ExecuteTemplate(&buf, "translation", words)
+	return buf.String()
+}
 
+func (t *Template) Phrases(words []slovnik.Word) string {
+	var buf bytes.Buffer
+	t.tmpl.ExecuteTemplate(&buf, "phrases", words)
 	return buf.String()
 }
