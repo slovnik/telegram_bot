@@ -1,5 +1,7 @@
 {{define "phrases"}}{{ $length := len . }}{{ if eq $length 1 }}{{ $word := index . 0}}
-{{- range $word.Samples }}{{ .Keyword }}: *{{ .Phrase }}* -> {{ .Translation }}
+Фразы со словом *{{$word.Word}}*
+{{ range $word.Samples }}
+{{"\xE2\x96\xAA"}} {{ .Keyword }}: *{{ .Phrase }}* -> {{ .Translation }}
 {{end -}}
 {{end -}}
 {{end}}

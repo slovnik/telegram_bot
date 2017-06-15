@@ -46,7 +46,7 @@ func CreateBot(env *Env) *Bot {
 		bot.updates, err = bot.api.GetUpdatesChan(u)
 
 	} else {
-		log.Printf("WebhookURL is set to '%s'. Using webhooks", env.config.WebhookURL)
+		log.Printf("WebhookURL is set to '%s'. Using webhooks\n", env.config.WebhookURL)
 		webHookURL := fmt.Sprintf("%s/bot%s", env.config.WebhookURL, bot.api.Token)
 		webHook := tgbotapi.NewWebhook(webHookURL)
 		if _, err = bot.api.SetWebhook(webHook); err != nil {
@@ -63,53 +63,45 @@ func CreateBot(env *Env) *Bot {
 // Listen start listening on message updates and calling provided handler for processing incoming messages
 func (bot *Bot) Listen() {
 	for update := range bot.updates {
-		if update.CallbackQuery != nil && strings.HasPrefix(update.CallbackQuery.Data, "phrases:") {
-			w := strings.TrimPrefix(update.CallbackQuery.Data, "phrases:")
-			words, err := bot.slovnikAPIClient.Translate(w)
-			messageText := bot.env.template.Phrases(words)
-			fmt.Println(messageText)
-			msg := tgbotapi.NewEditMessageText(update.CallbackQuery.Message.Chat.ID,
-				update.CallbackQuery.Message.MessageID,
-				messageText)
-			msg.ParseMode = tgbotapi.ModeMarkdown
-			msg.ReplyMarkup = bot.addMessageKeyboard(words)
-
-			_, err = bot.api.Send(msg)
-			if err != nil {
-				log.Println(err)
-			}
-
-		} else if update.CallbackQuery != nil && strings.HasPrefix(update.CallbackQuery.Data, "word:") {
-			w := strings.TrimPrefix(update.CallbackQuery.Data, "word:")
-			words, err := bot.slovnikAPIClient.Translate(w)
-			messageText := bot.env.template.Execute(words)
-			msg := tgbotapi.NewEditMessageText(update.CallbackQuery.Message.Chat.ID,
-				update.CallbackQuery.Message.MessageID,
-				messageText)
-			msg.ParseMode = tgbotapi.ModeMarkdown
-			msg.ReplyMarkup = bot.addMessageKeyboard(words)
-
-			_, err = bot.api.Send(msg)
-			if err != nil {
-				log.Println(err)
-			}
-		} else if update.Message != nil {
-			words, err := bot.slovnikAPIClient.Translate(update.Message.Text)
-
-			if err != nil {
-				log.Println(err)
-			}
-			messageText := bot.env.template.Execute(words)
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, messageText)
-			msg.ParseMode = tgbotapi.ModeMarkdown
-			msg.ReplyMarkup = bot.addMessageKeyboard(words)
-			_, err = bot.api.Send(msg)
-
-			if err != nil {
-				log.Println(err)
-			}
+		if update.Message != nil {
+			bot.handleMessage(&update)
+		} else if update.CallbackQuery != nil {
+			bot.handleCallbackQuery(&update)
 		}
 
+	}
+}
+
+func (bot *Bot) handleMessage(update *tgbotapi.Update) {
+	words, err := bot.slovnikAPIClient.Translate(update.Message.Text)
+	if err != nil {
+		log.Println(err)
+	}
+	messageText := bot.env.template.Execute(words)
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, messageText)
+	msg.ParseMode = tgbotapi.ModeMarkdown
+	msg.ReplyMarkup = bot.addMessageKeyboard(words)
+	_, err = bot.api.Send(msg)
+
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
+	callbackData := update.CallbackQuery.Data
+
+	if strings.HasPrefix(callbackData, "phrases:") {
+		w := strings.TrimPrefix(callbackData, "phrases:")
+		words, err := bot.slovnikAPIClient.Translate(w)
+		messageText := bot.env.template.Phrases(words)
+		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, messageText)
+		msg.ParseMode = tgbotapi.ModeMarkdown
+
+		_, err = bot.api.Send(msg)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }
 
@@ -119,7 +111,6 @@ func (bot *Bot) addMessageKeyboard(words []slovnik.Word) *tgbotapi.InlineKeyboar
 	}
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Слово", "word:"+words[0].Word),
 			tgbotapi.NewInlineKeyboardButtonData("Фразы", "phrases:"+words[0].Word),
 		),
 	)
