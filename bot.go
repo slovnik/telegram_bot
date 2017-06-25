@@ -9,6 +9,7 @@ import (
 
 	"strings"
 
+	"github.com/pkg/errors"
 	"gopkg.in/telegram-bot-api.v4"
 )
 
@@ -27,14 +28,14 @@ type Bot struct {
 }
 
 // CreateBot creates and initializes new bot
-func CreateBot(env *Env) *Bot {
+func CreateBot(env *Env) (*Bot, error) {
 	var err error
 
 	bot := Bot{env: env}
 	bot.slovnikAPIClient, err = slovnik.NewClient(bot.env.config.SlovnikURL)
 
 	if bot.api, err = tgbotapi.NewBotAPI(env.config.BotID); err != nil {
-		log.Panic(err)
+		return nil, errors.Wrapf(err, "Bot API init with ID '%s' failed", env.config.BotID)
 	}
 
 	if len(env.config.WebhookURL) == 0 {
@@ -50,14 +51,14 @@ func CreateBot(env *Env) *Bot {
 		webHookURL := fmt.Sprintf("%s/bot%s", env.config.WebhookURL, bot.api.Token)
 		webHook := tgbotapi.NewWebhook(webHookURL)
 		if _, err = bot.api.SetWebhook(webHook); err != nil {
-			log.Panic(err)
+			return nil, errors.Wrapf(err, "SetWebhook (%s) failed", webHookURL)
 		}
 
 		bot.updates = bot.api.ListenForWebhook("/bot" + bot.api.Token)
 		go http.ListenAndServe("0.0.0.0:8080", nil)
 	}
 
-	return &bot
+	return &bot, nil
 }
 
 // Listen start listening on message updates and calling provided handler for processing incoming messages
@@ -68,7 +69,6 @@ func (bot *Bot) Listen() {
 		} else if update.CallbackQuery != nil {
 			bot.handleCallbackQuery(&update)
 		}
-
 	}
 }
 
@@ -77,7 +77,7 @@ func (bot *Bot) handleMessage(update *tgbotapi.Update) {
 	if err != nil {
 		log.Println(err)
 	}
-	messageText := bot.env.template.Execute(words)
+	messageText := bot.env.template.Translation(words)
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, messageText)
 	msg.ParseMode = tgbotapi.ModeMarkdown
 	msg.ReplyMarkup = bot.addMessageKeyboard(words)
@@ -102,6 +102,11 @@ func (bot *Bot) handleCallbackQuery(update *tgbotapi.Update) {
 		if err != nil {
 			log.Println(err)
 		}
+
+		editMsg := tgbotapi.NewEditMessageText(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID, bot.env.template.Translation(words))
+		editMsg.ReplyMarkup = nil
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		_, err = bot.api.Send(editMsg)
 	}
 }
 

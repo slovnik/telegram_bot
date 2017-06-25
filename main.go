@@ -1,5 +1,9 @@
 package main
 
+import (
+	"log"
+)
+
 type Env struct {
 	config   *Config
 	template *Template
@@ -11,6 +15,9 @@ func main() {
 		template: CreateTemplate(),
 	}
 
-	b := CreateBot(&env)
+	b, err := CreateBot(&env)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	b.Listen()
 }

@@ -33,7 +33,7 @@ func CreateTemplate() *Template {
 	return &Template{tmpl}
 }
 
-func (t *Template) Execute(words []slovnik.Word) string {
+func (t *Template) Translation(words []slovnik.Word) string {
 	var buf bytes.Buffer
 	t.tmpl.ExecuteTemplate(&buf, "translation", words)
 	return buf.String()
