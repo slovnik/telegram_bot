@@ -2,37 +2,22 @@ package main
 
 import (
 	"log"
-
-	"github.com/slovnik/slovnik"
 )
 
 type Env struct {
-	cfg      *Config
+	config   *Config
 	template *Template
 }
 
 func main() {
 	env := Env{
-		cfg:      Setup(),
+		config:   Setup(),
 		template: CreateTemplate(),
 	}
 
-	b := CreateBot(env.cfg, env.handleIt)
+	b, err := CreateBot(&env)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	b.Listen()
-}
-
-func (e *Env) handleIt(message string) string {
-	c, err := slovnik.NewClient(e.cfg.SlovnikURL)
-	if err != nil {
-		log.Println(err)
-	}
-
-	words, err := c.Translate(message)
-
-	if err != nil {
-		log.Println(err)
-		return e.template.Execute(nil)
-	}
-
-	return e.template.Execute(words)
 }

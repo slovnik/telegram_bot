@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/slovnik/slovnik"
   packages = ["."]
-  revision = "792eef8ff45372dfed10840346944d80a39ce426"
+  revision = "db9a3b75b5521c18685f1b3ee727642a7e6069e6"
 
 [[projects]]
   name = "github.com/technoweenie/multipartstreamer"
